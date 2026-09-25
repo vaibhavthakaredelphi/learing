@@ -3,7 +3,10 @@
     "lang/0": true,
     "lang/1": true,
     "lang/2": true,
+    "lang/4": true,
     "lang/3": true
   },
-  "notes": {}
+  "notes": {
+    "script/0": "1) ls -lh --> used for lising file in detail\n2) ls -la --> used for listing hidden files/folder\n3)"
+  }
 }
