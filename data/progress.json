@@ -7,6 +7,6 @@
     "lang/3": true
   },
   "notes": {
-    "script/0": "1) ls -lh --> used for lising file in detail\n2) ls -la --> used for listing hidden files/folder\n3)"
+    "script/0": "1) ls -lh --> used for lising file in detail\n2) ls -la --> used for listing hidden files/folder\n3) cp source.txt backup.txt -->copy file\n4)"
   }
 }
