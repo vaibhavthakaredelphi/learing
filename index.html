@@ -599,6 +599,7 @@
     <div class="modal-note">fine-grained token: github → settings → developer settings → only this repo → contents read/write. your ticks + notes become public in the repo. attachments stay in this browser only.</div>
     <div class="modal-btns">
       <button class="btn" id="syncSave" type="button">save</button>
+      <button class="btn" id="syncNow" type="button">sync now</button>
       <button class="btn" id="syncClear" type="button">disconnect</button>
       <button class="btn" id="syncClose" type="button">close</button>
     </div>
@@ -1409,6 +1410,11 @@ document.getElementById("syncSave").addEventListener("click", () => {
   updateSyncBtn();
   toast("sync enabled");
   schedulePush(500);
+});
+document.getElementById("syncNow").addEventListener("click", () => {
+  if (!syncCfg || !syncCfg.token) { toast("save your token first, then sync now"); return; }
+  toast("syncing…");
+  pushNow();
 });
 document.getElementById("syncClear").addEventListener("click", () => {
   syncCfg = null;
