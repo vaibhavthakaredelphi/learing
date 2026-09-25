@@ -495,6 +495,69 @@
     80% { transform: translateX(5px); }
   }
 
+  #syncModal {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: rgba(11, 15, 20, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  #syncModal.hidden { display: none; }
+
+  .modal-card {
+    width: 100%;
+    max-width: 380px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 28px 26px 26px;
+  }
+
+  .modal-card .modal-prompt { color: var(--accent); font-weight: 700; font-size: 13px; }
+
+  .modal-card h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 4px 0 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .modal-card .modal-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 12px 0 4px;
+    letter-spacing: 0.03em;
+  }
+
+  .modal-card input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .modal-card input:focus { border-color: var(--accent-dim); }
+
+  .modal-note {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-top: 14px;
+    line-height: 1.55;
+  }
+
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+
   @media (max-width: 560px) {
     .brand h1 { font-size: 14px; }
     .toolbar { width: 100%; }
@@ -515,7 +578,7 @@
 
 <div id="lock">
   <form class="lock-card" id="lockForm">
-    <span class="lock-prompt">intern@devops</span>
+    <span class="lock-prompt">vaibhav</span>
     <h2>:~/$ authenticate</h2>
     <input type="password" id="lockPass" placeholder="password" autocomplete="current-password">
     <div class="lock-err" id="lockErr"></div>
@@ -523,17 +586,37 @@
   </form>
 </div>
 
+<div id="syncModal" class="hidden">
+  <div class="modal-card">
+    <span class="modal-prompt">vaibhav</span>
+    <h2>:~/$ sync --config</h2>
+    <label class="modal-label" for="syncToken">personal access token</label>
+    <input type="password" id="syncToken" placeholder="github_pat_…" autocomplete="off">
+    <label class="modal-label" for="syncRepo">repository</label>
+    <input type="text" id="syncRepo" value="vaibhavthakaredelphi/learing" autocomplete="off">
+    <label class="modal-label" for="syncBranch">branch</label>
+    <input type="text" id="syncBranch" value="main" autocomplete="off">
+    <div class="modal-note">fine-grained token: github → settings → developer settings → only this repo → contents read/write. your ticks + notes become public in the repo. attachments stay in this browser only.</div>
+    <div class="modal-btns">
+      <button class="btn" id="syncSave" type="button">save</button>
+      <button class="btn" id="syncClear" type="button">disconnect</button>
+      <button class="btn" id="syncClose" type="button">close</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <div class="shell">
     <div class="header-row">
       <div class="brand">
-        <span class="prompt">intern@devops</span>
+        <span class="prompt">vaibhav</span>
         <h1>:~/$ roadmap --track</h1>
         <span class="cursor"></span>
       </div>
       <div class="toolbar">
         <button class="btn" id="exportBtn">export</button>
         <button class="btn" id="importBtn">import</button>
+        <button class="btn" id="syncBtn">sync: off</button>
         <button class="btn" id="lockBtn">lock</button>
         <button class="btn danger" id="resetBtn">reset</button>
         <input type="file" id="importFile" accept=".json" hidden>
@@ -851,6 +934,7 @@ function render() {
         if (cb.checked) state.done[k] = true;
         else delete state.done[k];
         save();
+        schedulePush();
         topic.classList.toggle("done", cb.checked);
         updateSectionCount(section, sec);
         updateProgress();
@@ -906,6 +990,7 @@ function render() {
           noteBtn.textContent = "note +";
         }
         save();
+        schedulePush();
       });
       ta.addEventListener("paste", e => {
         if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length) {
@@ -1024,6 +1109,7 @@ document.getElementById("importFile").addEventListener("change", e => {
       }
       save();
       render();
+      schedulePush(1000);
       toast("progress imported");
     } catch (err) {
       toast("could not read that file");
@@ -1054,6 +1140,7 @@ resetBtn.addEventListener("click", () => {
   if (filesOK) idbRun(store => store.clear()).catch(() => {});
   save();
   render();
+  schedulePush(1000);
   toast("all progress cleared");
 });
 
@@ -1169,9 +1256,175 @@ try {
   if (sessionStorage.getItem(SESSION_KEY) === "1") hideLock();
 } catch (err) { document.body.classList.add("locked"); }
 
+const SYNC_CFG_KEY = "devops-github-sync";
+let syncCfg = null;
+let syncSha = null;
+let syncBusy = false;
+let syncPending = false;
+let syncTimer = null;
+
+try { syncCfg = JSON.parse(localStorage.getItem(SYNC_CFG_KEY)) || null; } catch (e) { syncCfg = null; }
+
+function b64encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function b64decode(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function ghApi(path, opts) {
+  return fetch("https://api.github.com" + path, Object.assign({
+    headers: {
+      "Authorization": "Bearer " + syncCfg.token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  }, opts || {}));
+}
+
+async function remoteGet() {
+  const p = "/repos/" + syncCfg.repo + "/contents/data/progress.json?ref=" + encodeURIComponent(syncCfg.branch);
+  const r = await ghApi(p);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("GET " + r.status);
+  const j = await r.json();
+  let content = "";
+  try { content = b64decode(String(j.content).replace(/\s/g, "")); } catch (e) {}
+  return { sha: j.sha, content };
+}
+
+async function remotePush(sha) {
+  const body = {
+    message: "chore: progress — " + doneCount() + "/" + totalTopics() + " topics",
+    content: b64encode(JSON.stringify({ done: state.done, notes: state.notes }, null, 2)),
+    branch: syncCfg.branch
+  };
+  if (sha) body.sha = sha;
+  return ghApi("/repos/" + syncCfg.repo + "/contents/data/progress.json", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function mergeRemote(content) {
+  try {
+    const data = JSON.parse(content);
+    let changed = false;
+    if (data && data.done) {
+      for (const k in data.done) {
+        if (data.done[k] && !state.done[k]) { state.done[k] = true; changed = true; }
+      }
+    }
+    if (data && data.notes) {
+      for (const k in data.notes) {
+        if (data.notes[k] && !state.notes[k]) { state.notes[k] = data.notes[k]; changed = true; }
+      }
+    }
+    return changed;
+  } catch (e) { return false; }
+}
+
+async function pushNow() {
+  if (!syncCfg || !syncCfg.token) return;
+  if (syncBusy) { syncPending = true; return; }
+  syncBusy = true;
+  try {
+    if (!syncSha) {
+      const cur = await remoteGet();
+      if (cur && mergeRemote(cur.content)) { save(); render(); }
+      syncSha = cur ? cur.sha : null;
+    }
+    let r = await remotePush(syncSha);
+    if (r.status === 409 || r.status === 422) {
+      const cur = await remoteGet();
+      syncSha = cur ? cur.sha : null;
+      r = await remotePush(syncSha);
+    }
+    if (r.ok) {
+      const j = await r.json();
+      if (j.content && j.content.sha) syncSha = j.content.sha;
+      toast("synced to github");
+    } else if (r.status === 401) {
+      toast("sync: token invalid");
+    } else {
+      toast("sync failed (" + r.status + ")");
+    }
+  } catch (e) {
+    toast("sync failed — offline?");
+  } finally {
+    syncBusy = false;
+    if (syncPending) { syncPending = false; schedulePush(500); }
+  }
+}
+
+function schedulePush(delay) {
+  if (!syncCfg || !syncCfg.token) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushNow, delay || 4000);
+}
+
+async function syncInit() {
+  if (!syncCfg || !syncCfg.token) return;
+  try {
+    const cur = await remoteGet();
+    if (cur) {
+      syncSha = cur.sha;
+      if (mergeRemote(cur.content)) { save(); render(); }
+    }
+  } catch (e) {}
+}
+
+function updateSyncBtn() {
+  document.getElementById("syncBtn").textContent = syncCfg && syncCfg.token ? "sync: on" : "sync: off";
+}
+
+const syncModal = document.getElementById("syncModal");
+document.getElementById("syncBtn").addEventListener("click", () => {
+  document.getElementById("syncToken").value = syncCfg && syncCfg.token ? syncCfg.token : "";
+  document.getElementById("syncRepo").value = syncCfg && syncCfg.repo ? syncCfg.repo : "vaibhavthakaredelphi/learing";
+  document.getElementById("syncBranch").value = syncCfg && syncCfg.branch ? syncCfg.branch : "main";
+  syncModal.classList.remove("hidden");
+  setTimeout(() => document.getElementById("syncToken").focus(), 50);
+});
+document.getElementById("syncClose").addEventListener("click", () => syncModal.classList.add("hidden"));
+syncModal.addEventListener("click", e => { if (e.target === syncModal) syncModal.classList.add("hidden"); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") syncModal.classList.add("hidden"); });
+document.getElementById("syncSave").addEventListener("click", () => {
+  const token = document.getElementById("syncToken").value.trim();
+  const repo = document.getElementById("syncRepo").value.trim() || "vaibhavthakaredelphi/learing";
+  const branch = document.getElementById("syncBranch").value.trim() || "main";
+  if (!token) { toast("paste a token first"); return; }
+  syncCfg = { token, repo, branch };
+  localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(syncCfg));
+  syncSha = null;
+  syncModal.classList.add("hidden");
+  updateSyncBtn();
+  toast("sync enabled");
+  schedulePush(500);
+});
+document.getElementById("syncClear").addEventListener("click", () => {
+  syncCfg = null;
+  localStorage.removeItem(SYNC_CFG_KEY);
+  syncSha = null;
+  clearTimeout(syncTimer);
+  syncModal.classList.add("hidden");
+  updateSyncBtn();
+  toast("sync disconnected");
+});
+
 load();
 initFiles().then(render).catch(render);
 updateLastSaved();
+updateSyncBtn();
+syncInit();
 </script>
 </body>
 </html>
