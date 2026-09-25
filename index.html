@@ -1420,6 +1420,27 @@ document.getElementById("syncClear").addEventListener("click", () => {
   toast("sync disconnected");
 });
 
+(function setupFromHash() {
+  try {
+    const h = location.hash || "";
+    if (h.indexOf("#token=") !== 0) return;
+    const params = new URLSearchParams(h.slice(1));
+    const token = params.get("token");
+    if (!token) return;
+    syncCfg = {
+      token: token,
+      repo: params.get("repo") || "vaibhavthakaredelphi/learing",
+      branch: params.get("branch") || "main"
+    };
+    localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(syncCfg));
+    syncSha = null;
+    updateSyncBtn();
+    history.replaceState(null, "", location.pathname + location.search);
+    toast("sync enabled via link");
+    schedulePush(500);
+  } catch (e) {}
+})();
+
 load();
 initFiles().then(render).catch(render);
 updateLastSaved();
