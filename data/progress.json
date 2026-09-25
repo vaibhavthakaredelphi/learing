@@ -1,4 +1,9 @@
 {
-  "done": {},
-  "notes": {}
+  "done": {
+    "lang/0": true,
+    "lang/1": true
+  },
+  "notes": {
+    "lang/3": "hello testing"
+  }
 }
