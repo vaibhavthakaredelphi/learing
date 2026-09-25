@@ -1281,13 +1281,16 @@ function b64decode(b64) {
 }
 
 function ghApi(path, opts) {
-  return fetch("https://api.github.com" + path, Object.assign({
-    headers: {
+  opts = opts || {};
+  return fetch("https://api.github.com" + path, {
+    method: opts.method || "GET",
+    headers: Object.assign({
       "Authorization": "Bearer " + syncCfg.token,
       "Accept": "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28"
-    }
-  }, opts || {}));
+    }, opts.headers || {}),
+    body: opts.body
+  });
 }
 
 async function remoteGet() {
