@@ -600,6 +600,7 @@
     <div class="modal-btns">
       <button class="btn" id="syncSave" type="button">save</button>
       <button class="btn" id="syncNow" type="button">sync now</button>
+      <button class="btn" id="syncPull" type="button">pull from github</button>
       <button class="btn" id="syncClear" type="button">disconnect</button>
       <button class="btn" id="syncClose" type="button">close</button>
     </div>
@@ -1418,6 +1419,23 @@ document.getElementById("syncNow").addEventListener("click", () => {
   if (!syncCfg || !syncCfg.token) { toast("save your token first, then sync now"); return; }
   toast("syncing…");
   pushNow();
+});
+document.getElementById("syncPull").addEventListener("click", async () => {
+  if (!syncCfg || !syncCfg.token) { toast("no sync configured"); return; }
+  toast("pulling from github…");
+  try {
+    const cur = await remoteGet();
+    if (!cur) { toast("nothing on github yet"); return; }
+    syncSha = cur.sha;
+    const data = JSON.parse(cur.content);
+    state.done = (data && data.done) || {};
+    state.notes = (data && data.notes) || {};
+    save();
+    render();
+    toast("pulled — local replaced with github version");
+  } catch (e) {
+    toast("pull failed");
+  }
 });
 document.getElementById("syncClear").addEventListener("click", () => {
   syncCfg = null;
