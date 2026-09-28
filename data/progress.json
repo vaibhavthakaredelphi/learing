@@ -12,6 +12,6 @@
   },
   "notes": {
     "script/0": "1) ls -lh --> used for lising file in detail\n2) ls -la --> used for listing hidden files/folder\n3) cp source.txt backup.txt -->copy file\n4) cp -r source_folder backup_folder --> copy folder\n5) mv old.parquet new.parquet --> rename \n6) mv file.parquet /data/archive/ --> move folder or files \n7) head file.txt  -->1st 10 lines\n8) tail file.txt  -->last 10 lines\n\n",
-    "os/2": "in the network box \n1) "
+    "os/2": "in the network box \n1) enp0s3 / enp0s31f6 / enp2s0 etc. These are Wifi , Ethernet \n2)"
   }
 }
