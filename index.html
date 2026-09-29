@@ -47,7 +47,7 @@
     background: rgba(11, 15, 20, 0.92);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--border);
-    padding: 18px 0 16px;
+    padding: 14px 0 12px;
   }
 
   .header-row {
@@ -153,9 +153,9 @@
   .legend .l-clip::before { background: var(--clip); }
   .legend .l-hint::before { display: none; }
 
-  main { padding-top: 34px; }
+  main { padding-top: 12px; }
 
-  section { margin-bottom: 36px; }
+  section { margin-bottom: 22px; }
 
   .sec-head {
     display: flex;
@@ -267,57 +267,6 @@
 
   .note-toggle.clip-btn:hover { color: var(--clip); border-color: rgba(88, 166, 255, 0.35); }
   .note-toggle.clip-btn.has-files { color: var(--clip); }
-
-  .note-area {
-    display: none;
-    padding: 0 4px 10px 32px;
-  }
-
-  .note-area.open { display: block; }
-
-  .note-label {
-    display: block;
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    color: var(--note);
-    opacity: 0.7;
-    margin: 2px 0 5px;
-  }
-
-  .note-area textarea {
-    width: 100%;
-    min-height: 110px;
-    background: rgba(210, 153, 34, 0.13);
-    border: 1px solid rgba(210, 153, 34, 0.3);
-    border-left: 3px solid var(--note);
-    border-radius: 8px;
-    color: #f0cc74;
-    font-family: var(--mono);
-    font-size: 14px;
-    line-height: 1.7;
-    padding: 12px 14px;
-    resize: vertical;
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-  }
-
-  .note-area textarea:focus {
-    border-color: rgba(210, 153, 34, 0.7);
-    border-left-color: var(--note);
-    box-shadow: inset 0 1px 0 rgba(210, 153, 34, 0.08), 0 0 0 3px rgba(210, 153, 34, 0.07);
-    background: rgba(210, 153, 34, 0.16);
-  }
-
-  .note-area textarea::placeholder { color: rgba(210, 153, 34, 0.45); }
-
-  .note-hint {
-    display: none;
-    font-size: 10.5px;
-    color: var(--text-faint);
-    margin-top: 4px;
-  }
-
-  .note-area.open .note-hint { display: block; }
 
   .att-area {
     display: none;
@@ -576,10 +525,90 @@
 
   .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
 
+  #noteModal {
+    position: fixed;
+    inset: 0;
+    z-index: 180;
+    background: rgba(11, 15, 20, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 3vw;
+  }
+
+  #noteModal.hidden { display: none; }
+
+  .note-modal-card {
+    width: 100%;
+    max-width: 920px;
+    height: 88vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 22px 24px 18px;
+  }
+
+  .note-modal-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .note-modal-head .modal-prompt { color: var(--accent); font-weight: 700; font-size: 13px; }
+
+  .note-modal-head .note-modal-topic {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .note-modal-head .note-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  #noteModal textarea {
+    flex: 1;
+    width: 100%;
+    background: rgba(210, 153, 34, 0.13);
+    border: 1px solid rgba(210, 153, 34, 0.3);
+    border-left: 3px solid var(--note);
+    border-radius: 8px;
+    color: #f0cc74;
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.75;
+    padding: 16px 18px;
+    resize: none;
+    outline: none;
+  }
+
+  #noteModal textarea:focus {
+    border-color: rgba(210, 153, 34, 0.7);
+    border-left-color: var(--note);
+    box-shadow: 0 0 0 3px rgba(210, 153, 34, 0.07);
+  }
+
+  #noteModal textarea::placeholder { color: rgba(210, 153, 34, 0.45); }
+
+  .note-modal-hint {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-top: 10px;
+    text-align: right;
+  }
+
   @media (max-width: 560px) {
     .brand h1 { font-size: 14px; }
     .toolbar { width: 100%; }
-    .note-area { padding-left: 4px; }
     .att-area { padding-left: 4px; }
   }
 
@@ -622,6 +651,18 @@
       <button class="btn" id="syncClear" type="button">disconnect</button>
       <button class="btn" id="syncClose" type="button">close</button>
     </div>
+  </div>
+</div>
+
+<div id="noteModal" class="hidden">
+  <div class="note-modal-card">
+    <div class="note-modal-head">
+      <span class="modal-prompt">vaibhav</span>
+      <span class="note-modal-topic" id="noteModalTopic">:~/$ notes</span>
+      <button class="btn note-modal-close" id="noteModalClose" type="button">done</button>
+    </div>
+    <textarea id="noteModalText" placeholder="notes… (what you learned, commands, links, what to revisit)&#10;&#10;paste screenshots with ctrl+v" spellcheck="false"></textarea>
+    <div class="note-modal-hint">autosaves as you type · syncs to github · esc or done to close</div>
   </div>
 </div>
 
@@ -970,8 +1011,7 @@ function render() {
       noteBtn.textContent = note ? "note •" : "note +";
       noteBtn.addEventListener("click", e => {
         e.preventDefault();
-        area.classList.toggle("open");
-        if (area.classList.contains("open")) ta.focus();
+        openNoteModal(k, name, noteBtn);
       });
 
       const clipBtn = document.createElement("button");
@@ -993,49 +1033,11 @@ function render() {
       row.appendChild(noteBtn);
       row.appendChild(clipBtn);
 
-      const area = document.createElement("div");
-      area.className = "note-area" + (note ? " open" : "");
-      const noteLabel = document.createElement("span");
-      noteLabel.className = "note-label";
-      noteLabel.textContent = "✎ notes";
-      const ta = document.createElement("textarea");
-      ta.placeholder = "notes… (what you learned, links, what to revisit)";
-      ta.value = note;
-      ta.addEventListener("input", () => {
-        const v = ta.value.trim();
-        if (v) {
-          state.notes[k] = ta.value;
-          noteBtn.classList.add("has-note");
-          noteBtn.textContent = "note •";
-        } else {
-          delete state.notes[k];
-          noteBtn.classList.remove("has-note");
-          noteBtn.textContent = "note +";
-        }
-        save();
-        schedulePush();
-      });
-      ta.addEventListener("paste", e => {
-        if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length) {
-          e.preventDefault();
-          addFiles(e.clipboardData.files, k);
-        }
-      });
-
-      const hint = document.createElement("div");
-      hint.className = "note-hint";
-      hint.textContent = "paste screenshots with ctrl+v · drag & drop files onto this row";
-
-      area.appendChild(noteLabel);
-      area.appendChild(ta);
-      area.appendChild(hint);
-
       const attArea = document.createElement("div");
       attArea.className = "att-area";
       attArea.id = attAreaId(k);
 
       topic.appendChild(row);
-      topic.appendChild(area);
       topic.appendChild(attArea);
 
       ["dragenter", "dragover"].forEach(ev => {
@@ -1279,6 +1281,55 @@ document.getElementById("lockBtn").addEventListener("click", () => {
 try {
   if (sessionStorage.getItem(SESSION_KEY) === "1") hideLock();
 } catch (err) { document.body.classList.add("locked"); }
+
+const noteModal = document.getElementById("noteModal");
+const noteModalText = document.getElementById("noteModalText");
+const noteModalTopic = document.getElementById("noteModalTopic");
+let noteModalKey = null;
+let noteModalBtn = null;
+
+function closeNoteModal() {
+  noteModal.classList.add("hidden");
+  noteModalKey = null;
+  noteModalBtn = null;
+}
+
+function openNoteModal(k, name, btn) {
+  noteModalKey = k;
+  noteModalBtn = btn || null;
+  noteModalTopic.textContent = "✎ " + name;
+  noteModalText.value = state.notes[k] || "";
+  noteModal.classList.remove("hidden");
+  setTimeout(() => noteModalText.focus(), 50);
+}
+
+noteModalText.addEventListener("input", () => {
+  if (!noteModalKey) return;
+  const v = noteModalText.value.trim();
+  if (v) {
+    state.notes[noteModalKey] = noteModalText.value;
+    if (noteModalBtn) { noteModalBtn.classList.add("has-note"); noteModalBtn.textContent = "note •"; }
+  } else {
+    delete state.notes[noteModalKey];
+    if (noteModalBtn) { noteModalBtn.classList.remove("has-note"); noteModalBtn.textContent = "note +"; }
+  }
+  save();
+  schedulePush();
+});
+
+noteModalText.addEventListener("paste", e => {
+  if (!noteModalKey) return;
+  if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length) {
+    e.preventDefault();
+    addFiles(e.clipboardData.files, noteModalKey);
+  }
+});
+
+document.getElementById("noteModalClose").addEventListener("click", closeNoteModal);
+noteModal.addEventListener("click", e => { if (e.target === noteModal) closeNoteModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !noteModal.classList.contains("hidden")) closeNoteModal();
+});
 
 const SYNC_CFG_KEY = "devops-github-sync";
 let syncCfg = null;
