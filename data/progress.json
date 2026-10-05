@@ -19,7 +19,8 @@
     "core/5": true,
     "core/6": true,
     "core/7": true,
-    "core/12": true
+    "core/12": true,
+    "core/8": true
   },
   "notes": {
     "script/0": "1) ls -lh --> used for lising file in detail\n2) ls -la --> used for listing hidden files/folder\n3) cp source.txt backup.txt -->copy file\n4) cp -r source_folder backup_folder --> copy folder\n5) mv old.parquet new.parquet --> rename \n6) mv file.parquet /data/archive/ --> move folder or files \n7) head file.txt  -->1st 10 lines\n8) tail file.txt  -->last 10 lines\n\n",
