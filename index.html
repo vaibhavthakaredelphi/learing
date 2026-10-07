@@ -724,6 +724,21 @@ let filesOK = true;
 
 function key(secId, idx) { return secId + "/" + idx; }
 
+function pruneState() {
+  const valid = new Set();
+  ROADMAP.forEach(sec => {
+    sec.topics.forEach((name, i) => valid.add(key(sec.id, i)));
+  });
+  let changed = false;
+  Object.keys(state.done).forEach(k => {
+    if (!valid.has(k)) { delete state.done[k]; changed = true; }
+  });
+  Object.keys(state.notes).forEach(k => {
+    if (!valid.has(k)) { delete state.notes[k]; changed = true; }
+  });
+  return changed;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -736,6 +751,7 @@ function load() {
       }
     }
   } catch (e) { state = { done: {}, notes: {}, attachments: {} }; }
+  if (pruneState()) save();
 }
 
 function save() {
@@ -1099,6 +1115,7 @@ document.getElementById("importFile").addEventListener("change", e => {
       }
       state.done = Object.assign({}, state.done, data.done || {});
       state.notes = Object.assign({}, state.notes, data.notes || {});
+      pruneState();
       if (!state.attachments) state.attachments = {};
       const incoming = data.attachments || {};
       for (const k of Object.keys(incoming)) {
@@ -1400,7 +1417,11 @@ async function pushNow() {
   try {
     if (!syncSha) {
       const cur = await remoteGet();
-      if (cur && mergeRemote(cur.content)) { save(); render(); }
+      if (cur && mergeRemote(cur.content)) {
+      pruneState();
+      save();
+      render();
+    }
       syncSha = cur ? cur.sha : null;
     }
     let r = await remotePush(syncSha);
@@ -1486,6 +1507,7 @@ document.getElementById("syncPull").addEventListener("click", async () => {
     const data = JSON.parse(cur.content);
     state.done = (data && data.done) || {};
     state.notes = (data && data.notes) || {};
+    pruneState();
     save();
     render();
     toast("pulled — local replaced with github version");
