@@ -27,6 +27,63 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 170px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar .side-label {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+
+  .track-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    padding: 9px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+  }
+
+  .track-btn:hover { color: var(--text); background: var(--surface-2); }
+
+  .track-btn.active {
+    color: var(--accent);
+    background: var(--accent-glow);
+    border-left-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .track-btn .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  .track-btn.active .dot { background: var(--accent); border-color: var(--accent); }
+
   html { scroll-behavior: smooth; }
 
   body {
@@ -607,6 +664,21 @@
   }
 
   @media (max-width: 560px) {
+    .app { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      height: auto;
+      position: static;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 4px;
+    }
+    .sidebar .side-label { display: none; }
+    .track-btn { width: auto; border-left: none; border-radius: 6px; padding: 6px 12px; }
+    .track-btn.active { border-left: none; }
     .brand h1 { font-size: 14px; }
     .toolbar { width: 100%; }
     .att-area { padding-left: 4px; }
@@ -622,6 +694,12 @@
 </style>
 </head>
 <body>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="side-label">TRACKS</div>
+</aside>
+<div class="content-col">
 
 <div id="lock">
   <form class="lock-card" id="lockForm">
@@ -707,14 +785,33 @@
 </footer>
 
 <div id="toast" role="status"></div>
+</div>
+</div>
 
 <script>
-const ROADMAP = [
-  { id: "lang", title: "Learn a Programming Language", topics: ["Python", "Ruby", "Go", "JavaScript / Node.js"] },
-  { id: "script", title: "Scripting", topics: ["Bash", "PowerShell"] },
-  { id: "os", title: "Operating Systems & Terminal", topics: ["Linux — Ubuntu / Debian", "Performance Monitoring", "Networking Tools", "Vim / Nano / Emacs"] },
-  { id: "core", title: "DevOps Core", topics: ["Text Manipulation", "GitHub / GitLab", "CI/CD — Jenkins, Runner, Webhooks", "Docker", "Proxy", "Firewall (UFW)", "Load Balancer — Types of LB in AWS", "Caching", "Nginx", "Apache (License)", "FTP / SFTP", "SSL / TLS", "SSH", "HTTP / HTTPS", "DNS", "Train System"] }
-];
+const TRACKS = {
+  devops: {
+    label: "devops",
+    sections: [
+      { id: "lang", title: "Learn a Programming Language", topics: ["Python", "Ruby", "Go", "JavaScript / Node.js"] },
+      { id: "script", title: "Scripting", topics: ["Bash", "PowerShell"] },
+      { id: "os", title: "Operating Systems & Terminal", topics: ["Linux — Ubuntu / Debian", "Performance Monitoring", "Networking Tools", "Vim / Nano / Emacs"] },
+      { id: "core", title: "DevOps Core", topics: ["Text Manipulation", "GitHub / GitLab", "CI/CD — Jenkins, Runner, Webhooks", "Docker", "Proxy", "Firewall (UFW)", "Load Balancer — Types of LB in AWS", "Caching", "Nginx", "Apache (License)", "FTP / SFTP", "SSL / TLS", "SSH", "HTTP / HTTPS", "DNS", "Train System"] }
+    ]
+  },
+  backend: {
+    label: "backend",
+    sections: [
+      { id: "be-basics", title: "Backend Basics", topics: ["What is a Backend, how do they work and why do we need them?"] }
+    ]
+  }
+};
+
+const TRACK_KEY = "devops-active-track";
+let activeTrack = "devops";
+try { if (localStorage.getItem(TRACK_KEY) in TRACKS) activeTrack = localStorage.getItem(TRACK_KEY); } catch (e) {}
+
+function ROADMAP() { return TRACKS[activeTrack].sections; }
 
 const STORAGE_KEY = "devops-roadmap-progress-v1";
 const MAX_FILE_MB = 25;
@@ -726,7 +823,7 @@ function key(secId, idx) { return secId + "/" + idx; }
 
 function pruneState() {
   const valid = new Set();
-  ROADMAP.forEach(sec => {
+  ROADMAP().forEach(sec => {
     sec.topics.forEach((name, i) => valid.add(key(sec.id, i)));
   });
   let changed = false;
@@ -866,7 +963,7 @@ function b64ToBlob(b64, type) {
 }
 
 function totalTopics() {
-  return ROADMAP.reduce((n, s) => n + s.topics.length, 0);
+  return ROADMAP().reduce((n, s) => n + s.topics.length, 0);
 }
 
 function doneCount() {
@@ -960,7 +1057,7 @@ function render() {
   const root = document.getElementById("roadmap");
   const frag = document.createDocumentFragment();
 
-  ROADMAP.forEach((sec, si) => {
+  ROADMAP().forEach((sec, si) => {
     const section = document.createElement("section");
     section.id = "sec-" + sec.id;
 
@@ -1330,6 +1427,32 @@ noteModal.addEventListener("click", e => { if (e.target === noteModal) closeNote
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !noteModal.classList.contains("hidden")) closeNoteModal();
 });
+
+const sidebar = document.querySelector(".sidebar");
+Object.keys(TRACKS).forEach(tid => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "track-btn" + (tid === activeTrack ? " active" : "");
+  b.dataset.track = tid;
+  b.innerHTML = '<span class="dot"></span>' + TRACKS[tid].label;
+  b.addEventListener("click", () => switchTrack(tid));
+  sidebar.appendChild(b);
+});
+
+function refreshTrackBtns() {
+  document.querySelectorAll(".track-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.track === activeTrack);
+  });
+}
+
+function switchTrack(tid) {
+  if (!TRACKS[tid] || tid === activeTrack) return;
+  activeTrack = tid;
+  try { localStorage.setItem(TRACK_KEY, tid); } catch (e) {}
+  refreshTrackBtns();
+  render();
+  window.scrollTo({ top: 0 });
+}
 
 const SYNC_CFG_KEY = "devops-github-sync";
 let syncCfg = null;
