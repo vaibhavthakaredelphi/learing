@@ -1,7 +1,20 @@
 {
   "done": {
     "be-basics/0": true,
-    "be-basics/1": true
+    "be-basics/1": true,
+    "lang/0": true,
+    "lang/1": true,
+    "lang/2": true,
+    "lang/3": true,
+    "script/0": true,
+    "script/1": true,
+    "os/0": true,
+    "os/1": true,
+    "os/2": true,
+    "os/3": true,
+    "core/0": true,
+    "core/1": true,
+    "core/2": true
   },
   "notes": {}
 }
