@@ -823,8 +823,10 @@ function key(secId, idx) { return secId + "/" + idx; }
 
 function pruneState() {
   const valid = new Set();
-  ROADMAP().forEach(sec => {
-    sec.topics.forEach((name, i) => valid.add(key(sec.id, i)));
+  Object.keys(TRACKS).forEach(tid => {
+    TRACKS[tid].sections.forEach(sec => {
+      sec.topics.forEach((name, i) => valid.add(key(sec.id, i)));
+    });
   });
   let changed = false;
   Object.keys(state.done).forEach(k => {
@@ -967,7 +969,12 @@ function totalTopics() {
 }
 
 function doneCount() {
-  return Object.values(state.done).filter(Boolean).length;
+  const ids = new Set(ROADMAP().map(s => s.id));
+  return Object.keys(state.done).filter(k => {
+    if (!state.done[k]) return false;
+    const sid = k.split("/")[0];
+    return ids.has(sid);
+  }).length;
 }
 
 function updateProgress() {
